@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>For You — On This Day</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Spectral:ital,wght@0,300;0,400;1,300&family=Cinzel:wght@400;600&display=swap" rel="stylesheet" />
+
+<style>
+  :root {
+    --ink: #1a1208;
+    --parchment: #f5f0e8;
+    --warm-mid: #e8dfc8;
+    --gold: #b8923a;
+    --gold-light: #d4a85a;
+    --rust: #8b4513;
+    --deep: #2c1a0e;
+    --muted: #7a6a52;
+    --accent-green: #3d5a3e;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background-color: var(--parchment);
+    color: var(--ink);
+    font-family: 'Spectral', Georgia, serif;
+    font-weight: 300;
+    overflow-x: hidden;
+    cursor: default;
+  }
+
+  /* ── GRAIN OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.45;
+  }
+
+  /* ── PRELOADER ── */
+  #preloader {
+    position: fixed;
+    inset: 0;
+    background: var(--deep);
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    transition: opacity 0.9s ease, visibility 0.9s ease;
+  }
+  #preloader.gone { opacity: 0; visibility: hidden; }
+  .preloader-word {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1.1rem, 3vw, 1.6rem);
+    color: var(--gold-light);
+    letter-spacing: 0.35em;
+    font-style: italic;
+    opacity: 0;
+    animation: fadeWord 0.8s ease forwards;
+  }
+  .preloader-line {
+    width: 1px;
+    height: 0;
+    background: var(--gold);
+    animation: growLine 1.4s ease 0.6s forwards;
+  }
+  .preloader-sub {
+    font-family: 'Cinzel', serif;
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.5em;
+    opacity: 0;
+    animation: fadeWord 0.8s ease 1s forwards;
+  }
+  @keyframes fadeWord { to { opacity: 1; } }
+  @keyframes growLine { to { height: 60px; } }
+
+  /* ── SECTIONS ── */
+  section {
+    min-height: 100vh;
+    position: relative;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+  }
+
+  /* ── CHAPTER MARKER ── */
+  .chapter-marker {
+    font-family: 'Cinzel', serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.5em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 1.2rem;
+    opacity: 0;
+    transform: translateX(-20px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+
+  /* ── REVEAL CLASSES ── */
+  .reveal { opacity: 0; transform: translateY(32px); transition: opacity 0.9s ease, transform 0.9s ease; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+  .reveal-left { opacity: 0; transform: translateX(-40px); transition: opacity 0.9s ease, transform 0.9s ease; }
+  .reveal-left.visible { opacity: 1; transform: translateX(0); }
+  .reveal-right { opacity: 0; transform: translateX(40px); transition: opacity 0.9s ease, transform 0.9s ease; }
+  .reveal-right.visible { opacity: 1; transform: translateX(0); }
+  .chapter-marker.visible { opacity: 1; transform: translateX(0); }
+
+  /* ── SECTION 1: OPENING ── */
+  #opening {
+    background: var(--deep);
+    flex-direction: column;
+    text-align: center;
+    padding: 4rem 2rem;
+  }
+  #opening .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+  }
+  #opening .orb-1 { width: 500px; height: 500px; background: rgba(184,146,58,0.12); top: -100px; left: -100px; }
+  #opening .orb-2 { width: 400px; height: 400px; background: rgba(61,90,62,0.1); bottom: -80px; right: -80px; }
+
+  #opening .eyebrow {
+    font-family: 'Cinzel', serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.6em;
+    color: var(--gold);
+    margin-bottom: 3rem;
+    opacity: 0;
+    animation: fadeWord 1s ease 1.8s forwards;
+  }
+  #opening h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-size: clamp(2.8rem, 8vw, 7rem);
+    line-height: 1.05;
+    color: var(--parchment);
+    opacity: 0;
+    animation: slideUp 1.2s ease 2.1s forwards;
+    position: relative;
+    z-index: 1;
+  }
+  #opening h1 em {
+    font-style: italic;
+    color: var(--gold-light);
+  }
+  #opening .opening-body {
+    margin-top: 2rem;
+    font-size: clamp(1rem, 2vw, 1.2rem);
+    color: rgba(245,240,232,0.65);
+    max-width: 520px;
+    line-height: 1.9;
+    opacity: 0;
+    animation: slideUp 1.2s ease 2.6s forwards;
+    position: relative;
+    z-index: 1;
+  }
+  #opening .scroll-hint {
+    position: absolute;
+    bottom: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    opacity: 0;
+    animation: fadeWord 1s ease 3.2s forwards;
+  }
+  #opening .scroll-hint span { font-family: 'Cinzel', serif; font-size: 0.5rem; letter-spacing: 0.5em; color: var(--muted); }
+  .scroll-line {
+    width: 1px;
+    height: 50px;
+    background: linear-gradient(to bottom, var(--gold), transparent);
+    animation: scrollPulse 2s ease-in-out 3.5s infinite;
+  }
+  @keyframes scrollPulse { 0%,100%{opacity:0.4} 50%{opacity:1} }
+  @keyframes slideUp { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
+
+  /* ── SECTION 2: THE ARTIST ── */
+  #artist {
+    background: var(--parchment);
+    padding: 6rem 8vw;
+    justify-content: flex-start;
+  }
+  #artist .art-bg {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 45%;
+    height: 100%;
+    background: var(--warm-mid);
+    clip-path: polygon(15% 0%, 100% 0%, 100% 100%, 0% 100%);
+  }
+  #artist .art-decoration {
+    position: absolute;
+    right: 8%;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 260px;
+    height: 340px;
+    border: 1px solid var(--gold);
+    opacity: 0.25;
+  }
+  #artist .art-decoration::before {
+    content: '';
+    position: absolute;
+    inset: 12px;
+    border: 1px solid var(--gold);
+    opacity: 0.6;
+  }
+  #artist .content { max-width: 480px; position: relative; z-index: 1; }
+  #artist .big-quote {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(3rem, 7vw, 5.5rem);
+    font-weight: 300;
+    color: var(--gold);
+    line-height: 0.9;
+    margin-bottom: 0.5rem;
+  }
+
+  /* ── SHARED TEXT STYLES ── */
+  .section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 300;
+    line-height: 1.15;
+    color: var(--ink);
+    margin-bottom: 1.5rem;
+  }
+  .section-title em { font-style: italic; color: var(--rust); }
+  .section-body {
+    font-size: clamp(0.95rem, 1.8vw, 1.1rem);
+    line-height: 1.9;
+    color: var(--muted);
+    max-width: 420px;
+    margin-bottom: 1.5rem;
+  }
+  .section-rule {
+    width: 40px;
+    height: 1px;
+    background: var(--gold);
+    margin-bottom: 2rem;
+  }
+
+  /* ── SECTION 3: THE PHILOSOPHER ── */
+  #philosopher {
+    background: var(--deep);
+    padding: 6rem 8vw;
+    justify-content: flex-end;
+    text-align: right;
+  }
+  #philosopher .phil-bg {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 42%;
+    height: 100%;
+    background: rgba(184,146,58,0.06);
+  }
+  #philosopher .content { max-width: 520px; position: relative; z-index: 1; }
+  #philosopher .section-title { color: var(--parchment); }
+  #philosopher .section-title em { color: var(--gold-light); }
+  #philosopher .section-body { color: rgba(245,240,232,0.55); margin-left: auto; }
+  #philosopher .section-rule { margin-left: auto; }
+  #philosopher .chapter-marker { color: var(--gold); }
+  #philosopher .floating-text {
+    position: absolute;
+    left: 5%;
+    top: 50%;
+    transform: translateY(-50%) rotate(-90deg);
+    transform-origin: center;
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 0.8rem;
+    color: rgba(184,146,58,0.25);
+    letter-spacing: 0.3em;
+    white-space: nowrap;
+  }
+  .phil-quote {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1.2rem, 2.5vw, 1.7rem);
+    font-style: italic;
+    font-weight: 300;
+    color: var(--gold-light);
+    line-height: 1.6;
+    margin-bottom: 2rem;
+    padding-left: 1.5rem;
+    border-left: 1px solid var(--gold);
+    text-align: left;
+  }
+
+  /* ── SECTION 4: THE READER ── */
+  #reader {
+    background: #2d1f10;
+    padding: 6rem 8vw;
+    justify-content: center;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  #reader .books-grid {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 4rem;
+    flex-wrap: wrap;
+  }
+  .book-spine {
+    width: 28px;
+    height: 160px;
+    border-radius: 2px 4px 4px 2px;
+    position: relative;
+    cursor: default;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .book-spine:hover { transform: translateY(-8px); box-shadow: 0 12px 24px rgba(0,0,0,0.4); }
+  .book-spine span {
+    writing-mode: vertical-rl;
+    font-family: 'Spectral', serif;
+    font-size: 0.55rem;
+    letter-spacing: 0.1em;
+    color: rgba(255,255,255,0.7);
+    text-orientation: mixed;
+    transform: rotate(180deg);
+  }
+  #reader .content { max-width: 600px; position: relative; z-index: 1; }
+  #reader .section-title { color: var(--parchment); }
+  #reader .section-title em { color: var(--gold-light); }
+  #reader .section-body { color: rgba(245,240,232,0.55); }
+  #reader .chapter-marker { color: var(--gold); }
+
+  /* ── SECTION 5: THE BUILDER ── */
+  #builder {
+    background: var(--parchment);
+    padding: 6rem 8vw;
+    justify-content: flex-end;
+  }
+  #builder .left-panel {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 38%;
+    height: 100%;
+    background: var(--accent-green);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  #builder .data-art {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 4px;
+    padding: 2rem;
+    width: 100%;
+    opacity: 0.4;
+  }
+  .data-dot {
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--gold-light);
+    transition: opacity 0.3s ease;
+  }
+  #builder .content { max-width: 480px; position: relative; z-index: 1; }
+  #builder .section-title em { color: var(--accent-green); }
+
+  /* ── SECTION 6: THE PERSON ── */
+  #person {
+    background: #1c130a;
+    padding: 6rem 8vw;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  #person .content { max-width: 600px; }
+  #person .section-title { color: var(--parchment); }
+  #person .section-title em { color: var(--gold-light); }
+  #person .section-body { color: rgba(245,240,232,0.55); margin: 0 auto 1.5rem; }
+  #person .chapter-marker { color: var(--gold); }
+  #person .big-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(5rem, 15vw, 12rem);
+    font-weight: 300;
+    color: rgba(184,146,58,0.08);
+    line-height: 1;
+    position: absolute;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  /* ── SECTION 7: THE REVEAL ── */
+  #reveal {
+    background: var(--deep);
+    padding: 6rem 6vw;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: auto;
+  }
+  #reveal .reveal-top {
+    text-align: center;
+    margin-bottom: 4rem;
+    position: relative;
+  }
+  #reveal .reveal-top::before {
+    content: '';
+    position: absolute;
+    top: -2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 1px;
+    height: 50px;
+    background: linear-gradient(to bottom, transparent, var(--gold));
+  }
+  #reveal .happy {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(0.7rem, 2vw, 0.9rem);
+    letter-spacing: 0.6em;
+    color: var(--gold);
+    font-style: italic;
+    display: block;
+    margin-bottom: 1rem;
+  }
+  #reveal .name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(3.5rem, 10vw, 8rem);
+    font-weight: 300;
+    color: var(--parchment);
+    line-height: 1;
+    margin-bottom: 0.5rem;
+  }
+  #reveal .name span { color: var(--gold-light); font-style: italic; }
+  #reveal .message-block {
+    max-width: 560px;
+    margin: 2.5rem auto;
+    font-size: clamp(1rem, 1.8vw, 1.15rem);
+    line-height: 1.95;
+    color: rgba(245,240,232,0.7);
+    text-align: center;
+  }
+  #reveal .message-block strong { color: var(--gold-light); font-weight: 400; font-style: italic; }
+
+  /* ── PHOTO GALLERY ── */
+  .photo-gallery {
+    width: 100%;
+    max-width: 900px;
+    margin: 3rem auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: auto auto;
+    gap: 12px;
+  }
+  .photo-frame {
+    position: relative;
+    overflow: hidden;
+    background: #2c1a0e;
+    cursor: pointer;
+  }
+  .photo-frame:nth-child(1) { grid-column: span 2; aspect-ratio: 16/10; }
+  .photo-frame:nth-child(2) { aspect-ratio: 3/4; }
+  .photo-frame:nth-child(3) { aspect-ratio: 3/4; }
+  .photo-frame:nth-child(4) { aspect-ratio: 4/3; }
+  .photo-frame:nth-child(5) { grid-column: span 2; aspect-ratio: 16/8; }
+
+  .photo-frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.6s ease;
+    filter: sepia(0.15) contrast(1.05);
+  }
+  .photo-frame:hover img { transform: scale(1.04); }
+  .photo-frame::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 1px solid rgba(184,146,58,0.2);
+    pointer-events: none;
+    transition: border-color 0.3s ease;
+  }
+  .photo-frame:hover::after { border-color: rgba(184,146,58,0.5); }
+
+  /* PLACEHOLDER STATE */
+  .photo-placeholder {
+    width: 100%;
+    height: 100%;
+    min-height: 180px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    background: #1c1008;
+    color: rgba(184,146,58,0.3);
+    border: 1px dashed rgba(184,146,58,0.2);
+    cursor: pointer;
+    transition: background 0.3s ease;
+    font-family: 'Cinzel', serif;
+    font-size: 0.55rem;
+    letter-spacing: 0.3em;
+  }
+  .photo-placeholder:hover { background: #261508; color: rgba(184,146,58,0.6); }
+  .photo-placeholder svg { width: 28px; height: 28px; opacity: 0.5; }
+  .photo-placeholder input { display: none; }
+
+  /* ── FOOTER ── */
+  #footer {
+    background: var(--deep);
+    padding: 4rem 2rem 3rem;
+    text-align: center;
+    border-top: 1px solid rgba(184,146,58,0.1);
+  }
+  #footer .sign {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 0.9rem;
+    color: rgba(245,240,232,0.35);
+    letter-spacing: 0.15em;
+  }
+  #footer .divider { width: 40px; height: 1px; background: rgba(184,146,58,0.25); margin: 1.5rem auto; }
+
+  /* ── LIGHTBOX ── */
+  #lightbox {
+    position: fixed;
+    inset: 0;
+    background: rgba(10,6,2,0.95);
+    z-index: 5000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    cursor: zoom-out;
+  }
+  #lightbox.open { display: flex; animation: fadeIn 0.3s ease; }
+  #lightbox img { max-width: 90vw; max-height: 90vh; object-fit: contain; filter: sepia(0.1); }
+  #lightbox-close {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    font-family: 'Cinzel', serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.4em;
+    color: var(--gold);
+    cursor: pointer;
+    background: none;
+    border: none;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+  }
+  #lightbox-close:hover { opacity: 1; }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    #artist .art-bg { width: 100%; clip-path: none; opacity: 0.3; }
+    #builder .left-panel { display: none; }
+    #builder { justify-content: flex-start; }
+    #philosopher { text-align: left; justify-content: flex-start; }
+    #philosopher .section-body { margin-left: 0; }
+    #philosopher .section-rule { margin-left: 0; }
+    .photo-gallery { grid-template-columns: 1fr 1fr; }
+    .photo-frame:nth-child(1) { grid-column: span 2; }
+    .photo-frame:nth-child(5) { grid-column: span 2; }
+  }
+</style>
+</head>
+<body>
+
+<!-- PRELOADER -->
+<div id="preloader">
+  <p class="preloader-word">something for you</p>
+  <div class="preloader-line"></div>
+  <p class="preloader-sub">a moment — carefully made</p>
+</div>
+
+<!-- LIGHTBOX -->
+<div id="lightbox">
+  <button id="lightbox-close" onclick="closeLightbox()">CLOSE ✕</button>
+  <img id="lightbox-img" src="" alt="" />
+</div>
+
+<!-- ── S1: OPENING ── -->
+<section id="opening">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <p class="eyebrow">February 21 &nbsp;·&nbsp; A Day Worth Marking</p>
+  <h1>There are <em>rare</em><br/>kinds of people.</h1>
+  <p class="opening-body">The kind who carry whole worlds inside them — quietly, without fanfare. Who read between lines others don't even notice exist. This is for one of those.</p>
+  <div class="scroll-hint">
+    <span>scroll to begin</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<!-- ── S2: THE ARTIST ── -->
+<section id="artist">
+  <div class="art-bg"></div>
+  <div class="art-decoration"></div>
+  <div class="content">
+    <p class="chapter-marker reveal">Chapter I</p>
+    <div class="big-quote reveal">"</div>
+    <h2 class="section-title reveal">She sees the world<br/>in <em>layers</em>.</h2>
+    <div class="section-rule reveal"></div>
+    <p class="section-body reveal">
+      Art isn't decoration to her — it's a language. A way of translating what logic alone can't hold. 
+      She looks at a painting the way a poet looks at a storm: curious, patient, 
+      searching for the thing beneath the surface of the thing.
+    </p>
+    <p class="section-body reveal">
+      That kind of vision doesn't just make you good at art. It makes you good at being alive.
+    </p>
+  </div>
+</section>
+
+<!-- ── S3: THE PHILOSOPHER ── -->
+<section id="philosopher">
+  <div class="phil-bg"></div>
+  <div class="floating-text">thought · wonder · question · understand</div>
+  <div class="content">
+    <p class="chapter-marker reveal">Chapter II</p>
+    <div class="phil-quote reveal">"The unexamined life is not worth living" — and she doesn't need reminding.</div>
+    <h2 class="section-title reveal">A mind that<br/>won't let things<br/><em>simply be</em>.</h2>
+    <div class="section-rule reveal"></div>
+    <p class="section-body reveal">
+      Philosophy, to her, isn't a class or a book on a shelf. It's the habit of asking 
+      one more question — even after everyone else has settled for the easy answer.
+    </p>
+    <p class="section-body reveal">
+      The depth of her mind isn't intimidating. It's an invitation.
+    </p>
+  </div>
+</section>
+
+<!-- ── S4: THE READER ── -->
+<section id="reader">
+  <div class="books-grid reveal">
+    <div class="book-spine" style="background:#8b4513;height:180px"><span>Achebe</span></div>
+    <div class="book-spine" style="background:#5c3317;height:155px"><span>Chimamanda</span></div>
+    <div class="book-spine" style="background:#3d2b1a;height:195px"><span>Ngugi</span></div>
+    <div class="book-spine" style="background:#7a3b1e;height:160px"><span>Okri</span></div>
+    <div class="book-spine" style="background:#4a2010;height:175px"><span>Bessie Head</span></div>
+    <div class="book-spine" style="background:#6b3320;height:148px"><span>Ama Aidoo</span></div>
+    <div class="book-spine" style="background:#2e1a0d;height:185px"><span>Soyinka</span></div>
+    <div class="book-spine" style="background:#8a4a25;height:165px"><span>Bulawayo</span></div>
+  </div>
+  <div class="content">
+    <p class="chapter-marker reveal">Chapter III</p>
+    <h2 class="section-title reveal">She reads Africa<br/>back to <em>itself</em>.</h2>
+    <div class="section-rule reveal"></div>
+    <p class="section-body reveal">
+      She doesn't just read African literature — she inhabits it. She understands that 
+      these stories aren't just novels; they're reckonings, recoveries, and reimaginings 
+      of a continent that has always had more to say than the world has been ready to hear.
+    </p>
+    <p class="section-body reveal">
+      That she reads this way means she understands something about identity, memory, and 
+      belonging that most people spend a lifetime missing.
+    </p>
+  </div>
+</section>
+
+<!-- ── S5: THE BUILDER ── -->
+<section id="builder">
+  <div class="left-panel">
+    <div class="data-art" id="dataArt"></div>
+  </div>
+  <div class="content">
+    <p class="chapter-marker reveal">Chapter IV</p>
+    <h2 class="section-title reveal">She's not waiting<br/>to be ready.<br/>She's <em>building</em> it.</h2>
+    <div class="section-rule reveal"></div>
+    <p class="section-body reveal">
+      The data science journey, the deliberate self-improvement — this isn't restlessness.
+      It's a kind of faith. Faith that she can understand more, do more, become more.
+    </p>
+    <p class="section-body reveal">
+      The world calls it ambition. To her, it probably just feels like honesty — being honest 
+      about how much she knows she's capable of.
+    </p>
+  </div>
+</section>
+
+<!-- ── S6: THE PERSON ── -->
+<section id="person">
+  <div class="big-num">∞</div>
+  <div class="content">
+    <p class="chapter-marker reveal">Chapter V</p>
+    <h2 class="section-title reveal">And then —<br/>beyond all of it —<br/>there's just <em>her</em>.</h2>
+    <div class="section-rule reveal" style="margin: 0 auto 2rem;"></div>
+    <p class="section-body reveal">
+      Warm. Genuinely, quietly warm. The kind of smart that doesn't make rooms feel small.
+      Curious in a way that makes other people feel interesting. 
+    </p>
+    <p class="section-body reveal">
+      Some people are easy to admire from a distance. She's the kind you want to actually know — 
+      not because she's impressive (though she is), but because every conversation feels like 
+      it opened a door that didn't exist before.
+    </p>
+  </div>
+</section>
+
+<!-- ── S7: THE REVEAL ── -->
+<section id="reveal" style="padding-bottom: 6rem;">
+  <div class="reveal-top">
+    <span class="happy reveal">Happy Birthday</span>
+    <h2 class="name reveal">To <span>You</span>.</h2>
+    <div class="section-rule reveal" style="margin: 1.5rem auto;"></div>
+  </div>
+
+  <p class="message-block reveal">
+    Two weeks of silence, a world of things unsaid — and yet here we are, because 
+    some people don't need daily conversation to matter. You've been one of the most 
+    interesting minds I've had the privilege of being near. <strong>The depth of you</strong> — 
+    the art, the questions, the books, the drive — it's not ordinary. You are not ordinary.
+  </p>
+  <p class="message-block reveal">
+    I hope today feels like everything you quietly deserve: warmth, beauty, and a reminder 
+    that the world is genuinely better because you're in it. <strong>Happy Birthday.</strong>
+  </p>
+
+  <!-- PHOTO GALLERY -->
+  <div class="photo-gallery" id="gallery">
+    <!-- Replace the src="" with your actual image paths/URLs, e.g. src="photo1.jpg" -->
+    <!-- Each .photo-frame below is a click-to-upload placeholder -->
+    <div class="photo-frame reveal" id="frame-1">
+      <label class="photo-placeholder">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        <span>PHOTO I</span>
+        <input type="file" accept="image/*" onchange="loadPhoto(this, 'frame-1')" />
+      </label>
+    </div>
+    <div class="photo-frame reveal" id="frame-2">
+      <label class="photo-placeholder">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        <span>PHOTO II</span>
+        <input type="file" accept="image/*" onchange="loadPhoto(this, 'frame-2')" />
+      </label>
+    </div>
+    <div class="photo-frame reveal" id="frame-3">
+      <label class="photo-placeholder">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        <span>PHOTO III</span>
+        <input type="file" accept="image/*" onchange="loadPhoto(this, 'frame-3')" />
+      </label>
+    </div>
+    <div class="photo-frame reveal" id="frame-4">
+      <label class="photo-placeholder">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        <span>PHOTO IV</span>
+        <input type="file" accept="image/*" onchange="loadPhoto(this, 'frame-4')" />
+      </label>
+    </div>
+    <div class="photo-frame reveal" id="frame-5">
+      <label class="photo-placeholder">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        <span>PHOTO V</span>
+        <input type="file" accept="image/*" onchange="loadPhoto(this, 'frame-5')" />
+      </label>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<div id="footer">
+  <div class="divider"></div>
+  <p class="sign">made with care &nbsp;·&nbsp; for someone worth the effort</p>
+</div>
+
+<script>
+  /* ── PRELOADER ── */
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      document.getElementById('preloader').classList.add('gone');
+    }, 2800);
+  });
+
+  /* ── DATA ART ── */
+  const dataArt = document.getElementById('dataArt');
+  if (dataArt) {
+    for (let i = 0; i < 64; i++) {
+      const d = document.createElement('div');
+      d.className = 'data-dot';
+      d.style.opacity = Math.random() * 0.6 + 0.1;
+      dataArt.appendChild(d);
+    }
+    setInterval(() => {
+      document.querySelectorAll('.data-dot').forEach(d => {
+        d.style.opacity = Math.random() * 0.6 + 0.1;
+      });
+    }, 1200);
+  }
+
+  /* ── INTERSECTION OBSERVER FOR REVEALS ── */
+  const observerOptions = { threshold: 0.12, rootMargin: '0px 0px -60px 0px' };
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        const el = entry.target;
+        const siblings = Array.from(el.parentElement.querySelectorAll('.reveal, .reveal-left, .reveal-right, .chapter-marker'));
+        const idx = siblings.indexOf(el);
+        setTimeout(() => el.classList.add('visible'), idx * 120);
+        observer.unobserve(el);
+      }
+    });
+  }, observerOptions);
+
+  document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .chapter-marker').forEach(el => {
+    observer.observe(el);
+  });
+
+  /* ── PHOTO UPLOAD ── */
+  function loadPhoto(input, frameId) {
+    if (!input.files || !input.files[0]) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const frame = document.getElementById(frameId);
+      frame.innerHTML = `<img src="${e.target.result}" alt="photo" onclick="openLightbox(this.src)" />`;
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+
+  /* ── LIGHTBOX ── */
+  function openLightbox(src) {
+    document.getElementById('lightbox-img').src = src;
+    document.getElementById('lightbox').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeLightbox() {
+    document.getElementById('lightbox').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  document.getElementById('lightbox').addEventListener('click', function(e) {
+    if (e.target === this) closeLightbox();
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+
+  /* ── PARALLAX ORBS ── */
+  document.addEventListener('mousemove', (e) => {
+    const orb1 = document.querySelector('.orb-1');
+    const orb2 = document.querySelector('.orb-2');
+    if (!orb1 || !orb2) return;
+    const x = e.clientX / window.innerWidth;
+    const y = e.clientY / window.innerHeight;
+    orb1.style.transform = `translate(${x * 30}px, ${y * 30}px)`;
+    orb2.style.transform = `translate(${-x * 30}px, ${-y * 30}px)`;
+  });
+</script>
+</body>
+</html>
